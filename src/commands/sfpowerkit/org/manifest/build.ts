@@ -5,6 +5,7 @@ import {
   BuildConfig,
   Packagexml,
 } from "../../../../impl/metadata/packageBuilder";
+import { SFPowerkit, LoggerLevel } from "../../../../sfpowerkit";
 
 // Initialize Messages with the current plugin directory
 Messages.importMessagesDirectory(__dirname);
@@ -18,14 +19,16 @@ export default class Build extends SfdxCommand {
 
   public static examples = [
     `$ sfdx sfpowerkit:org:manifest:build --targetusername myOrg@example.com -o package.xml`,
-    `$ sfdx sfpowerkit:org:manifest:build --targetusername myOrg@example.com -o package.xml -q 'ApexClass,CustomObject,Report'`,
-    `$ sfdx sfpowerkit:org:manifest:build --targetusername myOrg@example.com -o package.xml -q 'ApexClass:sampleclass,CustomObject:Account'`,
+    `$ sfdx sfpowerkit:org:manifest:build --targetusername myOrg@example.com -o package.xml -m ApexClass,CustomObject`,
+    `$ sfdx sfpowerkit:org:manifest:build --targetusername myOrg@example.com -o package.xml -m ApexClass,CustomObject --excludemanaged`,
+    `$ sfdx sfpowerkit:org:manifest:build --targetusername myOrg@example.com -o package.xml -q ApexClass,CustomObject,Report`,
+    `$ sfdx sfpowerkit:org:manifest:build --targetusername myOrg@example.com -o package.xml -q ApexClass:sampleclass,CustomObject:Account`,
   ];
 
   public static args = [{ name: "file" }];
 
   protected static flagsConfig = {
-    quickfilter: flags.string({
+    quickfilter: flags.array({
       char: "q",
       description: messages.getMessage("quickfilterFlagDescription"),
     }),
@@ -41,6 +44,29 @@ export default class Build extends SfdxCommand {
       char: "o",
       description: messages.getMessage("outputFileFlagDescription"),
     }),
+    metadata: flags.array({
+      char: "m",
+      description: messages.getMessage("metadataFlagDescription"),
+    }),
+    loglevel: flags.enum({
+      description: messages.getMessage("loglevelDescription"),
+      default: "info",
+      required: false,
+      options: [
+        "trace",
+        "debug",
+        "info",
+        "warn",
+        "error",
+        "fatal",
+        "TRACE",
+        "DEBUG",
+        "INFO",
+        "WARN",
+        "ERROR",
+        "FATAL",
+      ],
+    }),
   };
 
   // Comment this out if your command does not require an org username
@@ -52,13 +78,13 @@ export default class Build extends SfdxCommand {
 
   public async run(): Promise<AnyJson> {
     // this.org is guaranteed because requiresUsername=true, as opposed to supportsUsername
+    SFPowerkit.setLogLevel(this.flags.loglevel, this.flags.json);
     const apiversion = await this.org.getConnection().retrieveMaxApiVersion();
     const conn = this.org.getConnection();
     const configs: BuildConfig = new BuildConfig(this.flags, apiversion);
     const packageXML: Packagexml = new Packagexml(conn, configs);
     const result = await packageXML.build();
 
-    //console.log(result);
     if (!this.flags.json) {
       this.ux.log(result.toString());
     }

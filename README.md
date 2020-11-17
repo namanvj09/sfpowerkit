@@ -999,14 +999,18 @@ Generate a complete manifest of all the metadata from the specified org. Once th
 
 ```
 USAGE
-  $ sfdx sfpowerkit:org:manifest:build [-q <string>] [-x] [-c] [-o <filepath>] [-u <string>] [--apiversion <string>] [--json] [--loglevel
+  $ sfdx sfpowerkit:org:manifest:build [-q <array>] [-x] [-c] [-o <filepath>] [-m <array>] [-u <string>] [--apiversion <string>] [--json] [--loglevel
   trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]
 
 OPTIONS
   -c, --includechilds                                                               Set to true to include child Metadata in the generated package.xml.
+
+  -m, --metadata=metadata                                                           comma separated values of metadata type, member or file names to be include while building the
+                                                                                    manifest
+
   -o, --outputfile=outputfile                                                       The output path where the manifest file will be created
 
-  -q, --quickfilter=quickfilter                                                     comma separated values  of metadata type, member or file names to be excluded while building the
+  -q, --quickfilter=quickfilter                                                     comma separated values of metadata type, member or file names to be excluded while building the
                                                                                     manifest
 
   -u, --targetusername=targetusername                                               username or alias for the target org; overrides default target org
@@ -1021,8 +1025,10 @@ OPTIONS
 
 EXAMPLES
   $ sfdx sfpowerkit:org:manifest:build --targetusername myOrg@example.com -o package.xml
-  $ sfdx sfpowerkit:org:manifest:build --targetusername myOrg@example.com -o package.xml -q 'ApexClass,CustomObject,Report'
-  $ sfdx sfpowerkit:org:manifest:build --targetusername myOrg@example.com -o package.xml -q 'ApexClass:sampleclass,CustomObject:Account'
+  $ sfdx sfpowerkit:org:manifest:build --targetusername myOrg@example.com -o package.xml -m ApexClass,CustomObject
+  $ sfdx sfpowerkit:org:manifest:build --targetusername myOrg@example.com -o package.xml -m ApexClass,CustomObject --excludemanaged
+  $ sfdx sfpowerkit:org:manifest:build --targetusername myOrg@example.com -o package.xml -q ApexClass,CustomObject,Report
+  $ sfdx sfpowerkit:org:manifest:build --targetusername myOrg@example.com -o package.xml -q ApexClass:sampleclass,CustomObject:Account
 ```
 
 _See code: [src\commands\sfpowerkit\org\manifest\build.ts](https://github.com/Accenture/sfpowerkit/blob/main/src/commands/sfpowerkit/org/manifest/build.ts)_

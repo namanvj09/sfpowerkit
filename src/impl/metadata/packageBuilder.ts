@@ -167,8 +167,10 @@ export class Packagexml {
 
     for await (const object of describe.metadataObjects) {
       if (
-        this.configs.quickFilters.length !== 0 &&
-        this.configs.quickFilters.includes(object.xmlName)
+        (this.configs.quickFilters.length > 0 &&
+          this.configs.quickFilters.includes(object.xmlName)) ||
+        (this.configs.metadata.length > 0 &&
+          !this.configs.metadata.includes(object.xmlName))
       ) {
         continue;
       }
@@ -226,8 +228,10 @@ export class Packagexml {
     mdtypes.sort();
     mdtypes.forEach((mdtype) => {
       if (
-        this.configs.quickFilters.length === 0 ||
-        !this.configs.quickFilters.includes(mdtype)
+        (this.configs.quickFilters.length === 0 ||
+          !this.configs.quickFilters.includes(mdtype)) &&
+        (this.configs.metadata.length === 0 ||
+          this.configs.metadata.includes(mdtype))
       ) {
         packageJson.types.push({
           name: mdtype,
@@ -392,6 +396,7 @@ export class Packagexml {
 
 export class BuildConfig {
   public quickFilters: string[];
+  public metadata: string[];
   public excludeManaged: boolean;
   public includeChilds: boolean;
   public apiVersion: string;
@@ -403,11 +408,8 @@ export class BuildConfig {
     this.excludeManaged = flags["excludemanaged"];
     this.includeChilds = flags["includechilds"];
     this.apiVersion = flags["apiversion"] || apiVersion;
-    this.quickFilters = flags["quickfilter"]
-      ? flags["quickfilter"].split(",").map((elem) => {
-          return elem.trim();
-        })
-      : [];
+    this.quickFilters = flags["quickfilter"] ? flags["quickfilter"] : [];
+    this.metadata = flags["metadata"] ? flags["metadata"] : [];
     this.outputFile = flags["outputfile"] || "package.xml";
   }
 }
