@@ -1,5 +1,5 @@
 {
-  "version": "2.4.4",
+  "version": "2.5.2",
   "commands": {
     "sfpowerkit:auth:login": {
       "id": "sfpowerkit:auth:login",
@@ -74,6 +74,59 @@
           "char": "a",
           "description": "Alias ofthe org",
           "required": false
+        }
+      },
+      "args": []
+    },
+    "sfpowerkit:org:cleartestresult": {
+      "id": "sfpowerkit:org:cleartestresult",
+      "description": "This command helps to clear any test results and code coverage in the org to get fresh and enhanced coverage everytime",
+      "usage": "<%= command.id %> [-u <string>] [--apiversion <string>] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]",
+      "pluginName": "sfpowerkit",
+      "pluginType": "core",
+      "aliases": [],
+      "examples": [
+        "$ sfdx sfpowerkit:org:cleartestresult -u myOrg@example.com"
+      ],
+      "flags": {
+        "json": {
+          "name": "json",
+          "type": "boolean",
+          "description": "format output as json",
+          "allowNo": false
+        },
+        "loglevel": {
+          "name": "loglevel",
+          "type": "option",
+          "description": "logging level for this command invocation",
+          "required": false,
+          "helpValue": "(trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL)",
+          "options": [
+            "trace",
+            "debug",
+            "info",
+            "warn",
+            "error",
+            "fatal",
+            "TRACE",
+            "DEBUG",
+            "INFO",
+            "WARN",
+            "ERROR",
+            "FATAL"
+          ],
+          "default": "warn"
+        },
+        "targetusername": {
+          "name": "targetusername",
+          "type": "option",
+          "char": "u",
+          "description": "username or alias for the target org; overrides default target org"
+        },
+        "apiversion": {
+          "name": "apiversion",
+          "type": "option",
+          "description": "override the api version used for api requests made by this command"
         }
       },
       "args": []
@@ -529,7 +582,7 @@
     "sfpowerkit:pool:delete": {
       "id": "sfpowerkit:pool:delete",
       "description": "Deletes the pooled scratch orgs from the Scratch Org Pool",
-      "usage": "<%= command.id %> -t <string> [-m] [-a] [-v <string>] [--apiversion <string>] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]",
+      "usage": "<%= command.id %> -t <string> [-m] [-i | -a] [-v <string>] [--apiversion <string>] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]",
       "pluginName": "sfpowerkit",
       "pluginType": "core",
       "aliases": [],
@@ -566,7 +619,7 @@
             "ERROR",
             "FATAL"
           ],
-          "default": "warn"
+          "default": "info"
         },
         "targetdevhubusername": {
           "name": "targetdevhubusername",
@@ -583,7 +636,7 @@
           "name": "tag",
           "type": "option",
           "char": "t",
-          "description": "(required) tag used to identify the scratch org pool",
+          "description": "tag used to identify the scratch org pool",
           "required": true
         },
         "mypool": {
@@ -599,6 +652,14 @@
           "type": "boolean",
           "char": "a",
           "description": "Deletes all used and unused Scratch orgs from pool by the tag",
+          "required": false,
+          "allowNo": false
+        },
+        "inprogressonly": {
+          "name": "inprogressonly",
+          "type": "boolean",
+          "char": "i",
+          "description": "Deletes all In Progress Scratch orgs from pool by the tag",
           "required": false,
           "allowNo": false
         }
@@ -723,7 +784,7 @@
             "ERROR",
             "FATAL"
           ],
-          "default": "warn"
+          "default": "info"
         },
         "targetdevhubusername": {
           "name": "targetdevhubusername",
@@ -2030,13 +2091,14 @@
     },
     "sfpowerkit:org:scratchorg:delete": {
       "id": "sfpowerkit:org:scratchorg:delete",
-      "description": "Gets the active count of scratch org by users in a devhub",
-      "usage": "<%= command.id %> -e <string> [-v <string>] [--apiversion <string>] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]",
+      "description": "Deletes the active count of scratch org by given usermame/email in a devhub",
+      "usage": "<%= command.id %> [-e <string> | -u <string>] [-v <string>] [--apiversion <string>] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]",
       "pluginName": "sfpowerkit",
       "pluginType": "core",
       "aliases": [],
       "examples": [
-        "$ sfdx sfpowerkit:org:scratchorg:delete  -e xyz@kyz.com -v devhub\n    Found Scratch Org Ids for user xyz@kyz.com\n    2AS6F000000XbxVWAS\n    Deleting Scratch Orgs\n    Deleted Scratch Org 2AS6F000000XbxVWAS\n  "
+        "$ sfdx sfpowerkit:org:scratchorg:delete  -e xyz@kyz.com -v devhub",
+        "$ sfdx sfpowerkit:org:scratchorg:delete  -u xyz@kyz.com -v devhub"
       ],
       "flags": {
         "json": {
@@ -2083,7 +2145,14 @@
           "type": "option",
           "char": "e",
           "description": "Email of the user account that has created the scratch org",
-          "required": true
+          "required": false
+        },
+        "username": {
+          "name": "username",
+          "type": "option",
+          "char": "u",
+          "description": "Username of the scratch org to be deleted",
+          "required": false
         }
       },
       "args": []

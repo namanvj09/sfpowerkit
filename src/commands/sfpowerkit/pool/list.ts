@@ -25,29 +25,48 @@ export default class List extends SfdxCommand {
     `$ sfdx sfpowerkit:pool:list -t core `,
     `$ sfdx sfpowerkit:pool:list -t core -v devhub`,
     `$ sfdx sfpowerkit:pool:list -t core -v devhub -m`,
-    `$ sfdx sfpowerkit:pool:list -t core -v devhub -m -a`
+    `$ sfdx sfpowerkit:pool:list -t core -v devhub -m -a`,
   ];
 
   protected static flagsConfig = {
     tag: flags.string({
       char: "t",
       description: messages.getMessage("tagDescription"),
-      required: false
+      required: false,
     }),
     mypool: flags.boolean({
       char: "m",
       description: messages.getMessage("mypoolDescription"),
-      required: false
+      required: false,
     }),
     allscratchorgs: flags.boolean({
       char: "a",
       description: messages.getMessage("allscratchorgsDescription"),
-      required: false
-    })
+      required: false,
+    }),
+    loglevel: flags.enum({
+      description: "logging level for this command invocation",
+      default: "info",
+      required: false,
+      options: [
+        "trace",
+        "debug",
+        "info",
+        "warn",
+        "error",
+        "fatal",
+        "TRACE",
+        "DEBUG",
+        "INFO",
+        "WARN",
+        "ERROR",
+        "FATAL",
+      ],
+    }),
   };
 
   public async run(): Promise<AnyJson> {
-    SFPowerkit.setLogLevel("DEBUG", false);
+    SFPowerkit.setLogLevel(this.flags.loglevel, this.flags.json);
 
     await this.hubOrg.refreshAuth();
     const hubConn = this.hubOrg.getConnection();
@@ -66,14 +85,19 @@ export default class List extends SfdxCommand {
     let result = await listImpl.execute();
 
     if (!this.flags.mypool && result.length > 0) {
-      result.forEach(element => {
+      result.forEach((element) => {
         delete element.password;
       });
     }
 
-    let scratchOrgInuse = result.filter(element => element.status === "In use");
+    let scratchOrgInuse = result.filter(
+      (element) => element.status === "In use"
+    );
     let scratchOrgNotInuse = result.filter(
-      element => element.status === "Not in use"
+      (element) => element.status === "Available"
+    );
+    let scratchOrgInProvision = result.filter(
+      (element) => element.status === "Provisioning in progress"
     );
 
     if (!this.flags.json) {
@@ -95,6 +119,11 @@ export default class List extends SfdxCommand {
         this.ux.log(
           `Unused Scratch Orgs in the Pool : ${scratchOrgNotInuse.length} \n`
         );
+        if (scratchOrgInProvision.length && scratchOrgInProvision.length > 0) {
+          this.ux.log(
+            `Scratch Orgs being provisioned in the Pool : ${scratchOrgInProvision.length} \n`
+          );
+        }
 
         if (this.flags.mypool) {
           this.ux.table(result, [
@@ -104,7 +133,7 @@ export default class List extends SfdxCommand {
             "password",
             "expityDate",
             "status",
-            "loginURL"
+            "loginURL",
           ]);
         } else {
           this.ux.table(result, [
@@ -113,7 +142,7 @@ export default class List extends SfdxCommand {
             "username",
             "expityDate",
             "status",
-            "loginURL"
+            "loginURL",
           ]);
         }
       } else {
@@ -125,27 +154,31 @@ export default class List extends SfdxCommand {
     }
 
     let output: any = {
-      total: scratchOrgInuse.length + scratchOrgNotInuse.length,
+      total:
+        scratchOrgInuse.length +
+        scratchOrgNotInuse.length +
+        scratchOrgInProvision.length,
       inuse: scratchOrgInuse.length,
       unused: scratchOrgNotInuse.length,
-      scratchOrgDetails: result
+      inprovision: scratchOrgInProvision.length,
+      scratchOrgDetails: result,
     };
 
     return output;
   }
 
   private logTagCount(result: ScratchOrg[]) {
-    let tagCounts: any = result.reduce(function(obj, v) {
+    let tagCounts: any = result.reduce(function (obj, v) {
       obj[v.tag] = (obj[v.tag] || 0) + 1;
       return obj;
     }, {});
 
     let tagArray = new Array<any>();
 
-    Object.keys(tagCounts).forEach(function(key) {
+    Object.keys(tagCounts).forEach(function (key) {
       tagArray.push({
         tag: key,
-        count: tagCounts[key]
+        count: tagCounts[key],
       });
     });
 

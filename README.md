@@ -1,6 +1,6 @@
 # sfpowerkit
 
-[![NPM](https://img.shields.io/npm/v/sfpowerkit.svg)](https://www.npmjs.com/package/sfpowerkit) ![npm (tag)](https://img.shields.io/npm/v/sfpowerkit/beta) [![Build Status](https://dev.azure.com/dxatscale/sfpowerkit/_apis/build/status/Release?branchName=main)](https://dev.azure.com/dxatscale/sfpowerkit/_build/latest?definitionId=48&branchName=main) ![npm](https://img.shields.io/npm/dw/sfpowerkit)
+[![NPM](https://img.shields.io/npm/v/sfpowerkit.svg)](https://www.npmjs.com/package/sfpowerkit) ![npm (tag)](https://img.shields.io/npm/v/sfpowerkit/beta) [![Build Status](https://dev.azure.com/dxatscale/sfpowerkit/_apis/build/status/Release?branchName=main)](https://dev.azure.com/dxatscale/sfpowerkit/_build/latest?definitionId=48&branchName=main) ![npm](https://img.shields.io/npm/dw/sfpowerkit)[![CodeFactor](https://www.codefactor.io/repository/github/accenture/sfpowerkit/badge)](https://www.codefactor.io/repository/github/accenture/sfpowerkit)
 
 A Salesforce DX Plugin with multiple functionalities aimed at improving development and operational workflows
 Read the blog here https://accenture.github.io/blog/2019/06/27/sfpowerkit.html
@@ -73,6 +73,7 @@ $ sfdx plugins:link
     - [`sfpowerkit:org:trigger:activate`](#sfpowerkitorgtriggeractivate)
     - [`sfpowerkit:org:healthcheck`](#sfpowerkitorghealthcheck)
     - [`sfpowerkit:org:manifest:build`](#sfpowerkitorgmanifestbuild)
+    - [`sfpowerkit:org:cleartestresult`](#sfpowerkitorgcleartestresult)
     - [`sfpowerkit:org:orgcoverage`](#sfpowerkitorgorgcoverage)
     - [`sfpowerkit:org:profile:diff`](#sfpowerkitorgprofilediff)
     - [`sfpowerkit:org:sandbox:create`](#sfpowerkitorgsandboxcreate)
@@ -1033,6 +1034,24 @@ EXAMPLES
 
 _See code: [src\commands\sfpowerkit\org\manifest\build.ts](https://github.com/Accenture/sfpowerkit/blob/main/src/commands/sfpowerkit/org/manifest/build.ts)_
 
+### `sfpowerkit:org:cleartestresult`
+
+This command helps to clear any test results and code coverage in the org to get fresh and enhanced coverage everytime
+
+```
+USAGE
+  $ sfdx sfpowerkit:org:cleartestresult [-u <string>] [--apiversion <string>] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]
+
+OPTIONS
+  -u, --targetusername=targetusername                                               username or alias for the target org; overrides default target org
+  --apiversion=apiversion                                                           override the api version used for api requests made by this command
+  --json                                                                            format output as json
+  --loglevel=(trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL)  [default: warn] logging level for this command invocation
+
+EXAMPLE
+  $ sfdx sfpowerkit:org:cleartestresult -u myOrg@example.com
+```
+
 ### `sfpowerkit:org:orgcoverage`
 
 Gets the apex tests coverage of an org
@@ -1218,25 +1237,24 @@ _See code: [src\commands\sfpowerkit\org\scratchorg\usage.ts](https://github.com/
 
 ### `sfpowerkit:org:scratchorg:delete`
 
-Delete the scratch org for a paritcular user
+Deletes the active count of scratch org by given usermame/email in a devhub
 
 ```
 USAGE
-  $ sfdx sfpowerkit:org:scratchorg:delete -v <string>  -e <string>
-  [--loglevel trace|debug|info|warn|error|fatal]
+  $ sfdx sfpowerkit:org:scratchorg:delete [-e <string> | -u <string>] [-v <string>] [--apiversion <string>] [--json] [--loglevel
+  trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]
 
 OPTIONS
-  -v, --targetdevhubusername=targetdevhubusername  (required) username or alias for the dev hub org; overrides default dev hub org
+  -e, --email=email                                                                 Email of the user account that has created the scratch org
+  -u, --username=username                                                           Username of the scratch org to be deleted
+  -v, --targetdevhubusername=targetdevhubusername                                   username or alias for the dev hub org; overrides default dev hub org
+  --apiversion=apiversion                                                           override the api version used for api requests made by this command
+  --json                                                                            format output as json
+  --loglevel=(trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL)  [default: warn] logging level for this command invocation
 
-  -e, --email=email                                (required) Email of the user account's whose scratch org to be deleted
-
-
-EXAMPLE
+EXAMPLES
   $ sfdx sfpowerkit:org:scratchorg:delete  -e xyz@kyz.com -v devhub
-    Found Scratch Org Ids for user xyz@kyz.com
-    2AS6F000000XbxVWAS
-    Deleting Scratch Orgs
-    Deleted Scratch Org 2AS6F000000XbxVWAS
+  $ sfdx sfpowerkit:org:scratchorg:delete  -u xyz@kyz.com -v devhub
 ```
 
 _See code: [src\commands\sfpowerkit\org\scratchorg\usage.ts](https://github.com/Accenture/sfpowerkit/blob/main/src/commands/sfpowerkit/org/scratchorg/usage.ts)_
@@ -1407,7 +1425,7 @@ OPTIONS
   -v, --targetdevhubusername=targetdevhubusername                                   username or alias for the dev hub org; overrides default dev hub org
   --apiversion=apiversion                                                           override the api version used for api requests made by this command
   --json                                                                            format output as json
-  --loglevel=(trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL)  [default: warn] logging level for this command invocation
+  --loglevel=(trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL)  [default: info] logging level for this command invocation
 
 EXAMPLES
   $ sfdx sfpowerkit:pool:list -t core
@@ -1422,16 +1440,17 @@ Deletes the pooled scratch orgs from the Scratch Org Pool
 
 ```
 USAGE
-  $ sfdx sfpowerkit:pool:delete -t <string> [-m] [-a] [-v <string>] [--apiversion <string>] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]
+  $ sfdx sfpowerkit:pool:delete -t <string> [-m] [-a] [-i] [-v <string>] [--apiversion <string>] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]
 
 OPTIONS
   -a, --allscratchorgs                                                              Deletes all used and unused Scratch orgs from pool by the tag
+  -i, --inprogressonly                                                              Deletes all scratch orgs which are 'In Progress' stage from pool by the tag
   -m, --mypool                                                                      Filter only Scratch orgs created by current user in the pool
   -t, --tag=tag                                                                     (required) tag used to identify the scratch org pool
   -v, --targetdevhubusername=targetdevhubusername                                   username or alias for the dev hub org; overrides default dev hub org
   --apiversion=apiversion                                                           override the api version used for api requests made by this command
   --json                                                                            format output as json
-  --loglevel=(trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL)  [default: warn] logging level for this command invocation
+  --loglevel=(trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL)  [default: info] logging level for this command invocation
 
 EXAMPLES
   $ sfdx sfpowerkit:pool:delete -t core

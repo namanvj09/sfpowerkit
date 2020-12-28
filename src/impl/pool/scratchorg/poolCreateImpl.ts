@@ -45,6 +45,7 @@ export default class PoolCreateImpl {
   }
 
   public async poolScratchOrgs(): Promise<boolean> {
+    await ScratchOrgUtils.checkForNewVersionCompatible(this.hubOrg);
     let scriptExecPromises: Array<Promise<ScriptExecutionResult>> = new Array();
     let ipRangeExecPromises: Array<Promise<{
       username: string;
@@ -190,6 +191,9 @@ export default class PoolCreateImpl {
             {
               Id: scratchOrg.recordId,
               Pooltag__c: this.poolConfig.pool.tag,
+              Allocation_status__c: ScratchOrgUtils.isNewVersionCompatible
+                ? "Available"
+                : "",
               Password__c: scratchOrg.password,
             },
             this.hubOrg
@@ -370,6 +374,26 @@ export default class PoolCreateImpl {
         poolUser.scratchOrgs,
         this.hubOrg
       );
+
+      if (ScratchOrgUtils.isNewVersionCompatible) {
+        let scratchOrgInprogress = [];
+
+        poolUser.scratchOrgs.forEach((scratchOrg) => {
+          scratchOrgInprogress.push({
+            Id: scratchOrg.recordId,
+            Pooltag__c: this.poolConfig.pool.tag,
+            Allocation_status__c: "In Progress",
+          });
+        });
+
+        if (scratchOrgInprogress.length > 0) {
+          //set pool tag
+          await ScratchOrgUtils.setScratchOrgInfo(
+            scratchOrgInprogress,
+            this.hubOrg
+          );
+        }
+      }
     }
   }
 
@@ -402,11 +426,9 @@ export default class PoolCreateImpl {
             scratchOrg.orgId
           );
 
-          await ScratchOrgUtils.deleteScratchOrg(
-            this.hubOrg,
-            this.apiversion,
-            activeScratchOrgRecordId
-          );
+          await ScratchOrgUtils.deleteScratchOrg(this.hubOrg, [
+            activeScratchOrgRecordId,
+          ]);
           SFPowerkit.log(
             `Succesfully deleted scratchorg  ${scratchOrg.username}`,
             LoggerLevel.TRACE
@@ -651,6 +673,9 @@ export default class PoolCreateImpl {
             {
               Id: scratchOrg.recordId,
               Pooltag__c: this.poolConfig.pool.tag,
+              Allocation_status__c: ScratchOrgUtils.isNewVersionCompatible
+                ? "Available"
+                : "",
               Password__c: scratchOrg.password,
             },
             this.hubOrg

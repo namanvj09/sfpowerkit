@@ -22,29 +22,54 @@ export default class Delete extends SfdxCommand {
     `$ sfdx sfpowerkit:pool:delete -t core `,
     `$ sfdx sfpowerkit:pool:delete -t core -v devhub`,
     `$ sfdx sfpowerkit:pool:delete -t core -v devhub -m`,
-    `$ sfdx sfpowerkit:pool:delete -t core -v devhub -m -a`
+    `$ sfdx sfpowerkit:pool:delete -t core -v devhub -m -a`,
   ];
 
   protected static flagsConfig = {
     tag: flags.string({
       char: "t",
       description: messages.getMessage("tagDescription"),
-      required: true
+      required: true,
     }),
     mypool: flags.boolean({
       char: "m",
       description: messages.getMessage("mypoolDescription"),
-      required: false
+      required: false,
     }),
     allscratchorgs: flags.boolean({
       char: "a",
       description: messages.getMessage("allscratchorgsDescription"),
-      required: false
-    })
+      required: false,
+    }),
+    inprogressonly: flags.boolean({
+      char: "i",
+      description: messages.getMessage("inprogressonlyDescription"),
+      required: false,
+      exclusive: ["allscratchorgs"],
+    }),
+    loglevel: flags.enum({
+      description: "logging level for this command invocation",
+      default: "info",
+      required: false,
+      options: [
+        "trace",
+        "debug",
+        "info",
+        "warn",
+        "error",
+        "fatal",
+        "TRACE",
+        "DEBUG",
+        "INFO",
+        "WARN",
+        "ERROR",
+        "FATAL",
+      ],
+    }),
   };
 
   public async run(): Promise<AnyJson> {
-    SFPowerkit.setLogLevel("DEBUG", false);
+    SFPowerkit.setLogLevel(this.flags.loglevel, this.flags.json);
 
     await this.hubOrg.refreshAuth();
     const hubConn = this.hubOrg.getConnection();
@@ -57,7 +82,8 @@ export default class Delete extends SfdxCommand {
       this.flags.apiversion,
       this.flags.tag,
       this.flags.mypool,
-      this.flags.allscratchorgs
+      this.flags.allscratchorgs,
+      this.flags.inprogressonly
     );
 
     let result = await hydrateImpl.execute();
