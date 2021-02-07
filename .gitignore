@@ -9,3 +9,7 @@ node_modules
 .sfdx
 test/commands/package/version/*
 test/*
+packages/core/lib/*
+packages/sfpowerkit-cli/lib/*
+packages/sfpowerkit-cli/lib/*
+packages/core/tsconfig.tsbuildinfo
