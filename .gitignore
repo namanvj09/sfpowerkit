@@ -11,5 +11,6 @@ test/commands/package/version/*
 test/*
 packages/core/lib/*
 packages/sfpowerkit-cli/lib/*
-packages/sfpowerkit-cli/lib/*
+packages/sfpowerkit-cli/tsconfig.tsbuildinfo
+
 packages/core/tsconfig.tsbuildinfo
