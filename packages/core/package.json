@@ -1,0 +1,35 @@
+{
+  "name": "@dxatscale/sfpowerkit.core",
+  "version": "1.0.0",
+  "description": "Core lib for sfpowerkit",
+  "main": "lib/index",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Accenture/sfpowerkit.git"
+  },
+  "keywords": [
+    "sfdx",
+    "salesforce"
+  ],
+  "files": [
+    "/lib",
+    "/resources"
+  ],
+  "author": "dxatscale",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/Accenture/sfpowerkit/issues"
+  },
+  "scripts": {
+    "prepare": "rimraf lib && rm -rf tsconfig.tsbuildinfo && tsc -b && npm shrinkwrap"
+  },
+  "homepage": "https://github.com/Accenture/sfpowerkit#readme",
+  "dependencies": {
+    "async-retry": "^1.3.1",
+    "jsforce": "^1.10.1"
+  },
+  "devDependencies": {
+    "rimraf": "^3.0.2",
+    "typescript": "^4.0.5"
+  }
+}

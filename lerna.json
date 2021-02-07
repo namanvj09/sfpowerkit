@@ -1,0 +1,11 @@
+{
+  "packages": ["packages/core", "packages/sfpowerkit-cli"],
+  "version": "independent",
+  "command": {
+    "publish": {
+      "yes": true,
+      "ignoreChanges": ["*.md"],
+      "registry": "https://registry.npmjs.org"
+    }
+  }
+}
