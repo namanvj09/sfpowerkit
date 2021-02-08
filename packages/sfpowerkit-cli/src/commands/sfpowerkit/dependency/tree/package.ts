@@ -14,7 +14,7 @@ import GetDefaults from "../../../../utils/getDefaults";
 import { ProgressBar } from "../../../../ui/progressBar";
 import PackageInfo, {
   PackageDetail,
-} from "@dxatscale/sfpowerkit.core/lib/package/version/PackageInfo";
+} from "@dxatscale/sfpowerkit.core/lib/org/PackagesInAnOrg";
 
 // Initialize Messages with the current plugin directory
 core.Messages.importMessagesDirectory(__dirname);
@@ -103,6 +103,7 @@ export default class Tree extends SfdxCommand {
     try {
       let packageDetails: PackageDetail[] = await new PackageInfo(
         this.conn,
+        this.hubOrg?true:false,
         GetDefaults.getApiVersion()
       ).getPackages();
 

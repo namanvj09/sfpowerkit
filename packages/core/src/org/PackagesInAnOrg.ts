@@ -1,21 +1,25 @@
 import { Connection } from "jsforce";
 let retry = require("async-retry");
 
-export default class PackageInfo {
+export default class PackagesInAnOrg {
   conn: Connection;
   apiversion: string;
+  isHubOrg: boolean;
 
-  public constructor(conn: Connection, apiversion: string) {
+  public constructor(conn: Connection, isHubOrg:boolean,apiversion: string) {
     this.conn = conn;
+    this.isHubOrg=isHubOrg;
     this.apiversion = apiversion;
   }
 
   public async getPackages(): Promise<PackageDetail[]> {
     let packageDetails = await this.getInstalledPackages(this.conn, true);
+    if(this.isHubOrg)
+      packageDetails=await this.getPackagesDetailsfromDevHub(this.conn,packageDetails);
     return packageDetails;
   }
 
-  public async getInstalledPackages(
+  private async getInstalledPackages(
     conn: Connection,
     fetchLicenses: boolean
   ): Promise<PackageDetail[]> {
@@ -100,7 +104,7 @@ export default class PackageInfo {
     );
   }
 
-  public async getPackagesDetailsfromDevHub(
+  private async getPackagesDetailsfromDevHub(
     hubconn: Connection,
     pkgDetails: PackageDetail[]
   ): Promise<PackageDetail[]> {

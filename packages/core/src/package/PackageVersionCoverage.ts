@@ -1,35 +1,49 @@
-import { SFPowerkit } from "../../../sfpowerkit";
-import { LoggerLevel } from "@salesforce/core";
 import { Connection } from "jsforce";
 
-const QUERY_string = `SELECT SubscriberPackageVersionId,Package2Id, Package2.Name,MajorVersion,MinorVersion,PatchVersion,BuildNumber, CodeCoverage, HasPassedCodeCoverageCheck, Name FROM Package2Version WHERE `;
-const DEFAULT_ORDER_BY_FIELDS =
-  "Package2Id, MajorVersion, MinorVersion, PatchVersion, BuildNumber";
+
 export default class PackageVersionCoverage {
-  public constructor() {}
 
-  public async getCoverage(
-    versionId: string[],
-    versionNumber: string,
-    packageName: string,
-    conn: Connection
-  ): Promise<PackageCoverage[]> {
-    let whereClause = (await this.getWhereClause(
-      versionId,
-      versionNumber,
-      packageName
-    )) as string;
+QUERY = `SELECT SubscriberPackageVersionId,Package2Id, Package2.Name,MajorVersion,MinorVersion,PatchVersion,BuildNumber, CodeCoverage, HasPassedCodeCoverageCheck, Name FROM Package2Version WHERE `;
+DEFAULT_ORDER_BY_FIELDS =
+  "Package2Id, MajorVersion, MinorVersion, PatchVersion, BuildNumber";
 
-    if (!whereClause) {
-      throw new Error(
-        "Either versionId or versionNumber and packageName is mandatory"
+  public constructor(private conn:Connection) {
+  }
+
+  public async getCoverageWhenProvidedVersionIds(versionIds:string[]):Promise<PackageCoverage[]>
+  {
+    let whereClause = this.buildWhereFilter(
+        "SubscriberPackageVersionId",
+        versionIds
       );
-    }
+    return this.getCoverageOfPackages(whereClause);
+
+  }
+  public async getCoverageWhenProvidedPackageDetails(packageName:string,versionNumber:string):Promise<PackageCoverage[]>
+  {
+    let whereClause =
+    this.buildWhereOnNameOrId(
+      "0Ho",
+      "Package2Id",
+      "Package2.Name",
+      packageName
+    ) +
+    " AND " +
+    this.buildVersionNumberFilter(versionNumber);
+
+    return this.getCoverageOfPackages(whereClause);
+
+  }
+
+
+  public async getCoverageOfPackages(
+    whereClause:string
+  ): Promise<PackageCoverage[]> {
 
     let output = [];
 
-    const result = (await conn.tooling.query(
-      `${QUERY_string} ${whereClause} ORDER BY ${DEFAULT_ORDER_BY_FIELDS}`
+    const result = (await this.conn.tooling.query(
+      `${this.QUERY} ${whereClause} ORDER BY ${this.DEFAULT_ORDER_BY_FIELDS}`
     )) as any;
     if (result && result.size > 0) {
       result.records.forEach((record) => {
@@ -45,11 +59,6 @@ export default class PackageVersionCoverage {
         packageCoverage.packageVersionNumber = `${record.MajorVersion}.${record.MinorVersion}.${record.PatchVersion}.${record.BuildNumber}`;
         output.push(packageCoverage);
       });
-
-      SFPowerkit.log(
-        `Successfully Retrieved the Apex Test Coverage of the package version`,
-        LoggerLevel.INFO
-      );
     } else {
       throw new Error(
         `Package version doesnot exist, Please check the version details`
@@ -57,30 +66,9 @@ export default class PackageVersionCoverage {
     }
     return output;
   }
-  private async getWhereClause(
-    versionId: string[],
-    versionNumber: string,
-    packageName: string
-  ): Promise<string> {
-    var whereClause = "";
-    if (versionId && versionId.length > 0) {
-      whereClause = this.buildWhereFilter(
-        "SubscriberPackageVersionId",
-        versionId
-      );
-    } else if (versionNumber && packageName) {
-      whereClause =
-        this.buildWhereOnNameOrId(
-          "0Ho",
-          "Package2Id",
-          "Package2.Name",
-          packageName
-        ) +
-        " AND " +
-        this.buildVersionNumberFilter(versionNumber);
-    }
-    return whereClause;
-  }
+
+
+
   // buid the where clause IN or = based on length
   private buildWhereFilter(key: string, value: string[]) {
     var result = "";
@@ -106,6 +94,8 @@ export default class PackageVersionCoverage {
     }
     return result;
   }
+
+
   private buildVersionNumberFilter(versionNumber: string) {
     var result = "";
     let versionNumberList = versionNumber.split(".");
@@ -119,7 +109,7 @@ export default class PackageVersionCoverage {
     return result;
   }
 }
-interface PackageCoverage {
+export interface PackageCoverage {
   coverage: number;
   packageName: string;
   packageId: string;

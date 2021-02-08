@@ -2,7 +2,8 @@ import { core, flags, SfdxCommand } from "@salesforce/command";
 import { AnyJson } from "@salesforce/ts-types";
 import { SFPowerkit } from "../../../../sfpowerkit";
 import { SfdxError } from "@salesforce/core";
-import PackageVersionCoverage from "../../../../impl/package/version/packageVersionCoverage";
+import PackageVersionCoverage from "@dxatscale/sfpowerkit.core/lib/package/PackageVersionCoverage"
+
 // Initialize Messages with the current plugin directory
 core.Messages.importMessagesDirectory(__dirname);
 
@@ -20,27 +21,27 @@ export default class CodeCoverage extends SfdxCommand {
     `$ sfdx sfpowerkit:package:version:codecoverage -v myOrg@example.com -i 04tXXXXXXXXXXXXXXX \n`,
     `$ sfdx sfpowerkit:package:version:codecoverage -v myOrg@example.com -i 04tXXXXXXXXXXXXXXX,04tXXXXXXXXXXXXXXX,04tXXXXXXXXXXXXXXX \n`,
     `$ sfdx sfpowerkit:package:version:codecoverage -v myOrg@example.com -p core -n 1.2.0.45 \n`,
-    `$ sfdx sfpowerkit:package:version:codecoverage -v myOrg@example.com -p 0HoXXXXXXXXXXXXXXX -n 1.2.0.45`,
+    `$ sfdx sfpowerkit:package:version:codecoverage -v myOrg@example.com -p 0HoXXXXXXXXXXXXXXX -n 1.2.0.45`
   ];
 
   protected static flagsConfig = {
     package: flags.string({
       required: false,
       char: "p",
-      description: messages.getMessage("packageName"),
+      description: messages.getMessage("packageName")
     }),
     versionnumber: flags.string({
       required: false,
       char: "n",
-      description: messages.getMessage("packageVersionNumber"),
+      description: messages.getMessage("packageVersionNumber")
     }),
     versionid: flags.array({
       required: false,
       char: "i",
-      description: messages.getMessage("packageVersionId"),
+      description: messages.getMessage("packageVersionId")
     }),
     apiversion: flags.builtin({
-      description: messages.getMessage("apiversion"),
+      description: messages.getMessage("apiversion")
     }),
     loglevel: flags.enum({
       description: messages.getMessage("loglevel"),
@@ -58,9 +59,9 @@ export default class CodeCoverage extends SfdxCommand {
         "INFO",
         "WARN",
         "ERROR",
-        "FATAL",
-      ],
-    }),
+        "FATAL"
+      ]
+    })
   };
 
   // Comment this out if your command does not require an org username
@@ -88,14 +89,21 @@ export default class CodeCoverage extends SfdxCommand {
       packageName = this.flags.package;
     }
 
-    let packageVersionCoverageImpl: PackageVersionCoverage = new PackageVersionCoverage();
-
-    const result = (await packageVersionCoverageImpl.getCoverage(
-      versionId,
-      versionNumber,
-      packageName,
-      conn
-    )) as any;
+    let packageVersionCoverageImpl: PackageVersionCoverage = new PackageVersionCoverage(conn);
+    let result;
+    if(versionId && versionId.length>0)
+    {
+      result=await packageVersionCoverageImpl.getCoverageWhenProvidedVersionIds(versionId);
+    }
+    else if( packageName && versionNumber)
+    { 
+      result=await packageVersionCoverageImpl.getCoverageWhenProvidedPackageDetails(packageName,versionNumber);
+    }
+    else
+    {
+      throw new Error("Unable to process without providing versionIds or (packageName/versionNumber)");
+    }
+     
 
     this.ux.table(result, [
       "packageName",
@@ -103,7 +111,7 @@ export default class CodeCoverage extends SfdxCommand {
       "packageVersionNumber",
       "packageVersionId",
       "coverage",
-      "HasPassedCodeCoverageCheck",
+      "HasPassedCodeCoverageCheck"
     ]);
     return result;
   }

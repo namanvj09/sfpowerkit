@@ -1,7 +1,7 @@
 import { core, flags, SfdxCommand } from "@salesforce/command";
 import { AnyJson } from "@salesforce/ts-types";
 import { SFPowerkit } from "../../../../sfpowerkit";
-import PackageInfo from "@dxatscale/sfpowerkit.core/lib/package/version/PackageInfo";
+import PackageInfo from "@dxatscale/sfpowerkit.core/lib/org/PackagesInAnOrg";
 
 // Initialize Messages with the current plugin directory
 core.Messages.importMessagesDirectory(__dirname);
@@ -57,6 +57,7 @@ export default class Info extends SfdxCommand {
 
     let packageInfoImpl: PackageInfo = new PackageInfo(
       conn,
+      this.hubOrg?true:false,
       this.flags.apiversion
     );
 
@@ -64,17 +65,11 @@ export default class Info extends SfdxCommand {
 
     result.sort((a, b) => (a.packageName > b.packageName ? 1 : -1));
 
-    if (this.hubOrg) {
-      result = (await packageInfoImpl.getPackagesDetailsfromDevHub(
-        this.hubOrg.getConnection(),
-        result
-      )) as any;
-    }
 
     this.ux.table(result, [
       "packageName",
       "type",
-      "IsOrgDependent",
+      "isOrgDependent",
       "packageNamespacePrefix",
       "packageVersionNumber",
       "packageVersionId",
