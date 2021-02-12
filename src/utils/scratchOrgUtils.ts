@@ -1,9 +1,10 @@
-import { Connection, LoggerLevel, Org } from "@salesforce/core";
+import { Connection, LoggerLevel, Org, AuthInfo } from "@salesforce/core";
 let request = require("request-promise-native");
 import { SFPowerkit } from "../sfpowerkit";
 import { SfdxApi } from "../sfdxnode/types";
 let retry = require("async-retry");
 import { isNullOrUndefined } from "util";
+import Passwordgenerateimpl from "../impl/user/passwordgenerateimpl";
 
 const ORDER_BY_FILTER = " ORDER BY CreatedDate ASC";
 export default class ScratchOrgUtils {
@@ -181,12 +182,21 @@ export default class ScratchOrgUtils {
     );
 
     //Generate Password
-    let passwordResult = await sfdx.force.user.password.generate({
-      quiet: true,
-      targetusername: scratchOrg.username,
-      targetdevhubusername: hubOrg.getUsername(),
+    const soConn = await Connection.create({
+      authInfo: await AuthInfo.create({ username: scratchOrg.username }),
     });
-    scratchOrg.password = passwordResult.password;
+    let passwordData = await Passwordgenerateimpl.run(soConn);
+
+    scratchOrg.password = passwordData.password;
+
+    if (!passwordData.password) {
+      throw new Error("Unable to setup password to scratch org");
+    } else {
+      SFPowerkit.log(
+        `Password successfully set for ${passwordData.username} : ${passwordData.password}`,
+        LoggerLevel.INFO
+      );
+    }
 
     SFPowerkit.log(JSON.stringify(scratchOrg), LoggerLevel.TRACE);
     return scratchOrg;
@@ -318,9 +328,13 @@ export default class ScratchOrgUtils {
             query + ` AND createdby.username = '${hubOrg.getUsername()}' `;
         }
         if (unAssigned && this.isNewVersionCompatible) {
-          query = query + `AND Allocation_status__c ='Available'`;
+          // if new version compatible get Available / In progress
+          query =
+            query +
+            `AND ( Allocation_status__c ='Available' OR Allocation_status__c = 'In Progress' ) `;
         } else if (unAssigned && !this.isNewVersionCompatible) {
-          query = query + `AND Allocation_status__c !='Assigned'`;
+          // if new version not compatible get not Assigned
+          query = query + `AND Allocation_status__c !='Assigned' `;
         }
         query = query + ORDER_BY_FILTER;
         SFPowerkit.log("QUERY:" + query, LoggerLevel.TRACE);

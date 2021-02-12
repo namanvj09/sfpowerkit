@@ -12,6 +12,6 @@ export function loadSFDX() {
 
   registerNamespace({
     commandsDir: path.join(salesforce_alm_path, "commands"),
-    namespace: "force"
+    namespace: "force",
   });
 }
