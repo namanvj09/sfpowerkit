@@ -1,5 +1,6 @@
 {
-    "commandDescription": "This command is used to manage the package dependencies versions"
+    "commandDescription": "This command is used to manage the package dependencies versions",
+    "filterpathsDescription": "filter packageDirectories using path to get dependent packages details only for the specified path"
 
   }
   
