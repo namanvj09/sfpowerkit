@@ -1,5 +1,6 @@
 import { core, flags, SfdxCommand } from "@salesforce/command";
 import { SfdxError, Connection } from "@salesforce/core";
+import {cli} from 'cli-ux'
 import fs = require('fs');
 
 // Initialize Messages with the current plugin directory
@@ -16,7 +17,7 @@ export default class Manage extends SfdxCommand {
     public static description = messages.getMessage("commandDescription");
   
     public static examples = [
-      `$ sfdx sfpowerkit:dependency:tree:manage -v myDevHubOrg@example.com`,
+      `$ sfdx sfpowerkit:dependency:tree:manage`,
     ];
 
     protected static flagsConfig = {
@@ -47,10 +48,10 @@ export default class Manage extends SfdxCommand {
     };
 
     // Comment this out if your command does not require an org username
-    protected static requiresUsername = true;
+    protected static requiresUsername = false;
 
     // Comment this out if your command does not require a hub org username
-    protected static requiresDevhubUsername = true;
+    protected static requiresDevhubUsername = false;
 
     // Set this to true if your command requires a project workspace; 'requiresProject' is false by default
     protected static requiresProject = true;
@@ -74,8 +75,23 @@ export default class Manage extends SfdxCommand {
       );
 
       for(let packageDirectory of projectConfig.packageDirectories){
-        console.log(packageDirectory);
+        if(packageDirectory.dependencies && packageDirectory.dependencies[0] !== undefined){
+          this.ux.log(`There are ${projectConfig.packageDirectories.length} package dependencies in the ${packageDirectory.package} directory`)
+          for(let dependency of packageDirectory.dependencies){
+            this.ux.log(`Package: ${dependency.package} : VersionNumber: ${dependency.versionNumber}`)
+          } 
+        }
       }
+
+      let input = await cli.prompt(`Would you like to update the dependencies of all packages, or a specific package? [all, specific]`); 
+      if(input == 'specific'){
+        this.ux.log(`Packages found in the sfdx-project.json file`); 
+        for(let packageDirectory of projectConfig.packageDirectories){
+        this.ux.log(`${packageDirectory.package}`);
+        }
+      }
+
+
       return; 
 
     }
