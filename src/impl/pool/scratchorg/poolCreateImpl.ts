@@ -10,6 +10,7 @@ import FileUtils from "../../../utils/fileutils";
 import * as path from "path";
 import * as rimraf from "rimraf";
 import { SfdxApi } from "../../../sfdxnode/types";
+import Ajv from "ajv";
 
 export default class PoolCreateImpl {
   private hubConn: Connection;
@@ -24,6 +25,31 @@ export default class PoolCreateImpl {
   private limiter;
   private scriptExecutorWrappedForBottleneck;
   private ipRangeRelaxerWrappedForBottleneck;
+
+  private validateSoPoolConfig(
+    soPoolConfig: PoolConfig
+  ): void {
+
+    let schema = fs.readJSONSync(
+      path.join(__dirname, "..", "..", "..", "..", "schemas", "pool", "so_pool_config.schema.json"),
+      {encoding: "UTF-8"}
+    );
+
+    let validator = new Ajv({allErrors: true}).compile(schema);
+    let validationResult = validator(soPoolConfig);
+
+    if (!validationResult) {
+      let errorMsg: string =
+        `SO Pool Config does not meet schema requirements, ` +
+        `found ${validator.errors.length} validation errors:\n`;
+
+        validator.errors.forEach((error,errorNum) => {
+          errorMsg += `\n${errorNum+1}: ${error.schemaPath}: ${error.message} ${JSON.stringify(error.params, null, 4)}`;
+          });
+
+      throw new Error(errorMsg);
+    }
+  }
 
   public constructor(
     private poolconfigFilePath: string,
@@ -42,6 +68,7 @@ export default class PoolCreateImpl {
     this.ipRangeRelaxerWrappedForBottleneck = this.limiter.wrap(
       this.ipRangeRelaxer
     );
+    
   }
 
   public async poolScratchOrgs(): Promise<boolean> {
@@ -80,6 +107,8 @@ export default class PoolCreateImpl {
     this.poolConfig = JSON.parse(
       fs.readFileSync(this.poolconfigFilePath).toString()
     );
+
+    this.validateSoPoolConfig(this.poolConfig)
 
     //Validate Inputs
     if (isNullOrUndefined(this.poolConfig.pool.config_file_path)) {
@@ -200,6 +229,7 @@ export default class PoolCreateImpl {
                 ? "Available"
                 : "",
               Password__c: scratchOrg.password,
+              SfdxAuthUrl__c: scratchOrg.sfdxAuthUrl,
             },
             this.hubOrg
           );
@@ -337,18 +367,28 @@ export default class PoolCreateImpl {
 
   private async generateScratchOrgs() {
     //Generate Scratch Orgs
-    for (let poolUser of this.poolConfig.poolUsers) {
-      let count = 1;
+    let soCount=1;
+    for (let [index,poolUser] of this.poolConfig.poolUsers.entries()) {
+      let userCount = 1;
       poolUser.scratchOrgs = new Array<ScratchOrg>();
       for (let i = 0; i < poolUser.to_allocate; i++) {
         SFPowerkit.log(
-          `Creating Scratch  Org  ${count} of ${this.totalToBeAllocated}..`,
+          `Creating Scratch  Org ${soCount}/${this.totalToBeAllocated}`,
           LoggerLevel.INFO
         );
+        if(this.poolConfig.pool.user_mode)
+        {
+          SFPowerkit.log(
+            `Scratch  Org allocation:${poolUser.username}  alias:${soCount} count:${userCount}/${poolUser.to_allocate}`,
+            LoggerLevel.INFO
+          );
+
+        }
+
         try {
           let scratchOrg: ScratchOrg = await ScratchOrgUtils.createScratchOrg(
             this.sfdx,
-            count,
+            soCount,
             poolUser.username,
             this.poolConfig.pool.config_file_path,
             poolUser.expiry ? poolUser.expiry : this.poolConfig.pool.expiry,
@@ -358,11 +398,12 @@ export default class PoolCreateImpl {
           this.totalAllocated++;
         } catch (error) {
           SFPowerkit.log(
-            `Unable to provision scratch org  ${count} . Due to following Error: ${error.message}`,
+            `Unable to provision scratch org  ${soCount} . Due to following Error: ${error.message}`,
             LoggerLevel.INFO
           );
         }
-        count++;
+        soCount++;
+        userCount++;
       }
 
       await ScratchOrgUtils.getScratchOrgRecordId(
@@ -672,6 +713,7 @@ export default class PoolCreateImpl {
                 ? "Available"
                 : "",
               Password__c: scratchOrg.password,
+              SfdxAuthUrl__c: scratchOrg.sfdxAuthUrl,
             },
             this.hubOrg
           ).then(
