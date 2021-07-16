@@ -2,6 +2,7 @@ import { core, flags, SfdxCommand } from "@salesforce/command";
 import { SfdxError, Connection } from "@salesforce/core";
 import {cli} from 'cli-ux'
 import fs = require('fs');
+import P = require("pino");
 
 // Initialize Messages with the current plugin directory
 core.Messages.importMessagesDirectory(__dirname);
@@ -17,7 +18,7 @@ export default class Manage extends SfdxCommand {
     public static description = messages.getMessage("commandDescription");
   
     public static examples = [
-      `$ sfdx sfpowerkit:dependency:tree:manage`,
+      `$ sfdx sfpowerkit:package:dependencies:manage`,
     ];
 
     protected static flagsConfig = {
@@ -73,27 +74,39 @@ export default class Manage extends SfdxCommand {
       let projectConfig = JSON.parse(
         fs.readFileSync("sfdx-project.json", "utf8")
       );
-
+      this.ux.log(`There are ${projectConfig.packageDirectories.length} packages in the given sfdx-project.json file`);
       for(let packageDirectory of projectConfig.packageDirectories){
+
+      let YNinput = await this.yesNoInput(`Would you like to increase the version of ${packageDirectory.package} [y/n/q]`);
+      if(YNinput == 'y'){
+       let versionInput : string = await cli.prompt(`Input the version number E.g. 10.0.1.1`); 
+        let versionRegExp = "^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$"
+       if(versionInput.search(versionRegExp) != null){ //Ensures format pattern for version number is met. (This does a search only now, TODO: Fix to return true false)
+         console.log('regexp found');
+       }
+      }
+
         if(packageDirectory.dependencies && packageDirectory.dependencies[0] !== undefined){
-          this.ux.log(`There are ${projectConfig.packageDirectories.length} package dependencies in the ${packageDirectory.package} directory`)
+          this.ux.log(`There are ${packageDirectory.dependencies.length} package dependencies in the ${packageDirectory.package} package`)
           for(let dependency of packageDirectory.dependencies){
             this.ux.log(`Package: ${dependency.package} : VersionNumber: ${dependency.versionNumber}`)
           } 
         }
       }
 
-      let input = await cli.prompt(`Would you like to update the dependencies of all packages, or a specific package? [all, specific]`); 
-      if(input == 'specific'){
-        this.ux.log(`Packages found in the sfdx-project.json file`); 
-        for(let packageDirectory of projectConfig.packageDirectories){
-        this.ux.log(`${packageDirectory.package}`);
-        }
-      }
 
 
       return; 
 
+    }
+
+    private async yesNoInput(prompt){
+      let yesNoInput = await cli.prompt(`${prompt}?`);
+      if(yesNoInput == 'y' || yesNoInput == 'n' || yesNoInput == 'q'){
+        return yesNoInput;
+      }else{
+        yesNoInput(prompt);
+      }
     }
 
   }
